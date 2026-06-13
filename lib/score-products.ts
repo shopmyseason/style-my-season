@@ -7,6 +7,18 @@ import {
 import type { Product } from "@/lib/types";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
 
+export type PaletteMatch = {
+  name: string;
+  score: number;
+};
+
+/** Returns all palettes sorted by match score descending. */
+export function getTopMatchingPalettes(hex: string): PaletteMatch[] {
+  return seasonalPalettes
+    .map((p) => ({ name: p.name, score: getMatchScore(hex, p.colors) }))
+    .sort((a, b) => b.score - a.score);
+}
+
 export type ScoredProduct = {
   product: Product;
   matchScore: number;
