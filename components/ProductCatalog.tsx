@@ -84,6 +84,21 @@ export function ProductCatalog() {
   const hasActiveFilters =
     !!appliedCategory || !!appliedGender || appliedPalette !== null || onlyGoodMatches;
 
+  function handleGenderChange(val: string) {
+    setGender(val);
+    fetchProducts(category, val, paletteValue);
+  }
+
+  function handleCategoryChange(val: string) {
+    setCategory(val);
+    fetchProducts(val, gender, paletteValue);
+  }
+
+  function handlePaletteChange(val: string) {
+    setPaletteValue(val);
+    fetchProducts(category, gender, val);
+  }
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     fetchProducts(category, gender, paletteValue);
@@ -117,7 +132,7 @@ export function ProductCatalog() {
                 <select
                   id="gender-select"
                   value={gender}
-                  onChange={(e) => setGender(e.target.value)}
+                  onChange={(e) => handleGenderChange(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-gray-900 transition-all focus:border-rose-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-100/80"
                 >
                   <option value="">All</option>
@@ -138,7 +153,7 @@ export function ProductCatalog() {
                 <select
                   id="category-select"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-gray-900 transition-all focus:border-rose-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-100/80"
                 >
                   <option value="">All categories</option>
@@ -159,7 +174,7 @@ export function ProductCatalog() {
                   <select
                     id="palette-select"
                     value={paletteValue}
-                    onChange={(e) => setPaletteValue(e.target.value)}
+                    onChange={(e) => handlePaletteChange(e.target.value)}
                     className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-gray-900 transition-all focus:border-rose-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-rose-100/80"
                   >
                     <option value={ALL_PALETTES_VALUE}>All palettes</option>
