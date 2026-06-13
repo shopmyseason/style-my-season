@@ -1,12 +1,2 @@
-import type { seasonalPaletteNames } from "@/src/data/seasonalPalettes";
-
-export type SeasonalPalette = (typeof seasonalPaletteNames)[number];
-
-export type Product = {
-  id: string;
-  name: string;
-  price: number;
-  colorName: string;
-  hexColor: string;
-  palette: SeasonalPalette;
-};
+export type { SeasonalPalette } from "@/src/data/seasonalPalettes";
+export type { Product } from "@/src/data/manualProducts";

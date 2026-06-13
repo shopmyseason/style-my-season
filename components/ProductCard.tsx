@@ -1,5 +1,6 @@
+import Image from "next/image";
 import type { Product } from "@/lib/types";
-import { getMatchLabel, type MatchTier } from "@/src/lib/colorMatch";
+import { MatchScoreBar } from "./MatchScoreBar";
 
 type ProductCardProps = {
   product: Product;
@@ -7,30 +8,12 @@ type ProductCardProps = {
   hasAvoidWarning?: boolean;
 };
 
-function scoreBadgeStyles(tier: MatchTier): string {
-  switch (tier) {
-    case "excellent":
-      return "bg-rose-50 text-rose-700 ring-rose-200";
-    case "good":
-      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    case "possible":
-      return "bg-amber-50 text-amber-800 ring-amber-200";
-    case "poor":
-      return "bg-gray-100 text-gray-600 ring-gray-200";
-  }
-}
-
-function labelBadgeStyles(tier: MatchTier): string {
-  switch (tier) {
-    case "excellent":
-      return "bg-rose-100/90 text-rose-800 ring-rose-200/80";
-    case "good":
-      return "bg-emerald-100/90 text-emerald-800 ring-emerald-200/80";
-    case "possible":
-      return "bg-amber-100/90 text-amber-900 ring-amber-200/80";
-    case "poor":
-      return "bg-gray-200/90 text-gray-700 ring-gray-300/80";
-  }
+function hexIsLight(hex: string): boolean {
+  const c = hex.replace("#", "");
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return r * 0.299 + g * 0.587 + b * 0.114 > 160;
 }
 
 export function ProductCard({
@@ -38,83 +21,116 @@ export function ProductCard({
   matchScore,
   hasAvoidWarning = false,
 }: ProductCardProps) {
-  const { label, tier } = getMatchLabel(matchScore);
-
-  const formattedPrice = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-  }).format(product.price);
+  const productUrl = product.affiliateUrl || product.amazonUrl;
+  const textColor = hexIsLight(product.hex) ? "#4a4a4a" : "#f5f5f5";
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-200/50">
       <div
-        className="relative flex aspect-[4/5] items-center justify-center"
+        className="relative aspect-[4/5] overflow-hidden"
         style={{
-          background: `linear-gradient(145deg, ${product.hexColor}33 0%, ${product.hexColor}88 50%, ${product.hexColor}44 100%)`,
+          background: `linear-gradient(145deg, ${product.hex}cc 0%, ${product.hex} 100%)`,
         }}
       >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
-          <svg
-            className="h-10 w-10 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1}
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+        {product.imageUrl ? (
+          <Image
+            src={product.imageUrl}
+            alt={product.productName}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center">
+            <span
+              className="h-14 w-14 rounded-full shadow-lg ring-4 ring-white/30"
+              style={{ backgroundColor: product.hex }}
             />
-          </svg>
-        </div>
-        <div className="absolute right-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-1.5">
-          <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${scoreBadgeStyles(tier)}`}
-          >
-            {matchScore}%
-          </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ring-1 ring-inset ${labelBadgeStyles(tier)}`}
-          >
-            {label}
-          </span>
-        </div>
+            <span
+              className="text-sm font-medium opacity-80"
+              style={{ color: textColor }}
+            >
+              {product.colorName}
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
         {hasAvoidWarning && (
-          <span className="absolute bottom-3 left-3 right-3 rounded-full bg-amber-50 px-2.5 py-1 text-center text-[10px] font-medium leading-tight text-amber-900 ring-1 ring-inset ring-amber-200">
-            Not ideal for this palette
-          </span>
+          <div className="absolute bottom-3 left-3 right-3">
+            <span className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50/95 px-3 py-1.5 text-[11px] font-medium text-amber-900 shadow-sm ring-1 ring-amber-200/80 backdrop-blur-sm">
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                />
+              </svg>
+              Not ideal for this palette
+            </span>
+          </div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div>
-          <h3 className="font-medium leading-snug text-gray-900 transition-colors group-hover:text-rose-800">
-            {product.name}
+      <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              {product.category}
+            </p>
+            <span className="rounded-md bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+              {product.seasonalPalette}
+            </span>
+          </div>
+          <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-gray-900 transition-colors group-hover:text-rose-800">
+            <a
+              href={productUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline underline-offset-2"
+            >
+              {product.productName}
+            </a>
           </h3>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
-            {formattedPrice}
-          </p>
+          {product.price != null && (
+            <p className="text-xl font-semibold tracking-tight text-gray-900">
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(product.price)}
+            </p>
+          )}
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <MatchScoreBar score={matchScore} />
+
+        <div className="mt-auto space-y-3 border-t border-gray-50 pt-4">
+          <div className="flex items-center gap-2.5">
             <span
-              className="h-5 w-5 shrink-0 rounded-full ring-1 ring-gray-200"
-              style={{ backgroundColor: product.hexColor }}
+              className="h-6 w-6 shrink-0 rounded-full shadow-inner ring-2 ring-white"
+              style={{ backgroundColor: product.hex }}
               title={product.colorName}
             />
             <span className="truncate text-sm text-gray-600">
               {product.colorName}
             </span>
           </div>
+          <a
+            href={productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full rounded-xl bg-gray-900 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md"
+          >
+            View Product
+          </a>
         </div>
-
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-          {product.palette}
-        </p>
       </div>
     </article>
   );

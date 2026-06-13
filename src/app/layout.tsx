@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-sans antialiased text-gray-900">
+      <body className="min-h-full flex flex-col font-sans antialiased text-gray-900 selection:bg-rose-100 selection:text-rose-900">
         {children}
       </body>
     </html>

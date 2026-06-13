@@ -9,10 +9,11 @@ export function filterProducts(
 
   return products.filter((product) => {
     const matchesPalette =
-      selectedPalette === null || product.palette === selectedPalette;
+      selectedPalette === null ||
+      product.seasonalPalette === selectedPalette;
 
     const matchesName =
-      query.length === 0 || product.name.toLowerCase().includes(query);
+      query.length === 0 || product.productName.toLowerCase().includes(query);
 
     return matchesPalette && matchesName;
   });

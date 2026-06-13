@@ -514,3 +514,5 @@ export const seasonalPaletteNames = seasonalPalettes.map(
   "Cool Winter",
   "Deep Winter",
 ];
+
+export type SeasonalPalette = (typeof seasonalPaletteNames)[number];
