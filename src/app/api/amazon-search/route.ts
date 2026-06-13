@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { manualProducts } from "@/src/data/manualProducts";
+import { readProductsFile } from "@/src/lib/products-store";
 import { seasonalPaletteNames } from "@/src/data/seasonalPalettes";
 import { filterProducts } from "@/lib/filter-products";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
@@ -25,11 +25,8 @@ export async function GET(request: NextRequest) {
     searchParams.get("palette") ?? searchParams.get("selectedPalette") ?? "";
   const selectedPalette = parseSelectedPalette(paletteParam);
 
-  const products = filterProducts(
-    manualProducts,
-    searchTerm,
-    selectedPalette,
-  );
+  const allProducts = await readProductsFile();
+  const products = filterProducts(allProducts, searchTerm, selectedPalette);
 
   return NextResponse.json({
     products,
