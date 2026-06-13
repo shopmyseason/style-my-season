@@ -73,21 +73,23 @@ export async function analyzeAmazonUrl(url: string): Promise<AnalyzeResult> {
 
 ASIN: ${asin}
 Amazon URL: https://www.amazon.com/dp/${asin}
-${pageHtml ? `\nPage HTML (truncated):\n${pageHtml}` : "\n(Page HTML unavailable — use your knowledge of this ASIN if possible, otherwise make reasonable estimates.)"}
+${pageHtml ? `\nPage HTML (truncated):\n${pageHtml}` : "\n(Page HTML unavailable — use your general knowledge of Amazon products to identify likely color options for this type of item.)"}
 
-Extract ALL color variations available for this product. For each color variant, return a JSON object with these fields:
+IMPORTANT: Return ALL color variations for this product — most clothing items on Amazon have 5–15+ color options. Do NOT return just one. If the page HTML is unavailable, use your knowledge of typical color options for this type of clothing item and return at least 6–10 common colors (e.g. black, white, navy, red, green, beige, pink, blue, grey, burgundy). It is better to include more variants than to miss some.
+
+For each color variant return a JSON object with:
 - productName: full product name (same for all variants)
 - brand: brand name
-- category: one of "Women's Dresses", "Women's Maxi Dresses", "Women's Tops", "Women's T-Shirts", "Women's Blouses", "Women's Blazers", "Women's Skirts", "Women's Pants", "Women's Shorts", "Women's Cardigans", "Women's Sweaters", "Women's Coats", "Women's Jumpsuits", "Men's T-Shirts", "Men's Shirts", "Men's Pants", "Men's Shorts", "Men's Blazers", "Men's Sweaters", "Men's Coats", "Unisex Tops", "Unisex Bottoms" — pick the best match
-- asin: the ASIN (same for all variants unless you know the variant ASIN)
-- colorName: the color name exactly as Amazon lists it
-- hex: your best estimate of the hex color code for this color name (e.g. "Navy Blue" → "#1a2d5a")
+- category: pick the best match from: "Women's Dresses", "Women's Maxi Dresses", "Women's Tops", "Women's T-Shirts", "Women's Blouses", "Women's Blazers", "Women's Skirts", "Women's Pants", "Women's Shorts", "Women's Cardigans", "Women's Sweaters", "Women's Coats", "Women's Jumpsuits", "Women's Polo Shirts", "Men's T-Shirts", "Men's Shirts", "Men's Pants", "Men's Shorts", "Men's Blazers", "Men's Sweaters", "Men's Coats", "Unisex Tops", "Unisex Bottoms"
+- asin: the ASIN (use the same ASIN for all unless you know the per-variant ASIN)
+- colorName: the color name as Amazon lists it
+- hex: your best hex estimate for this color (e.g. "Navy Blue" → "#1a2d5a", "Ivory" → "#FFFFF0")
 - seasonalPalette: which of these 12 palettes best fits this color: ${paletteList}
 - price: price as a number (e.g. 29.99), or null if unknown
-- imageUrl: the main product image URL for this color variant if visible in the HTML, otherwise ""
-- notes: any relevant notes (e.g. "also available in plus sizes"), or ""
+- imageUrl: product image URL if visible in the HTML, otherwise ""
+- notes: any relevant notes, or ""
 
-Return ONLY a valid JSON array of variant objects, no explanation or markdown fences.`;
+Return ONLY a valid JSON array, no explanation or markdown fences.`;
 
   try {
     const message = await client.messages.create({

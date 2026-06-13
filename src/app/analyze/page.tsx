@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
-import { analyzeAmazonUrl, saveVariants } from "@/src/app/actions/analyze-amazon";
+import { analyzeAmazonUrl } from "@/src/app/actions/analyze-amazon";
 import type { AnalyzedVariant } from "@/src/app/actions/analyze-amazon";
 import { seasonalPaletteNames } from "@/src/data/seasonalPalettes";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
@@ -58,7 +58,7 @@ export default function AnalyzePage() {
   const [error, setError] = useState("");
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [isSaving, startSaving] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   const variants = useMemo(
     () => palette ? scoreVariants(rawVariants, palette) : rawVariants.map((v) => ({ ...v, matchScore: 0 })),
@@ -79,11 +79,22 @@ export default function AnalyzePage() {
     });
   }
 
-  function handleSave() {
-    startSaving(async () => {
-      const { saved } = await saveVariants(rawVariants);
-      setSavedCount(saved);
-    });
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/products/save-variants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rawVariants),
+      });
+      const data = await res.json() as { saved?: number; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Save failed");
+      setSavedCount(data.saved ?? rawVariants.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   const goodMatches = variants.filter((v) => v.matchScore >= 75);

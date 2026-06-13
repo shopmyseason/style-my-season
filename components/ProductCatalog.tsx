@@ -200,6 +200,24 @@ export function ProductCatalog() {
         </div>
       </section>
 
+      {/* Analyze CTA */}
+      <section className="px-4 pt-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <a
+            href="/analyze"
+            className="flex flex-col items-start gap-2 rounded-2xl border border-violet-100 bg-gradient-to-r from-rose-50 via-violet-50 to-amber-50 px-6 py-5 transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p className="font-medium text-gray-900">Found something you love on Amazon?</p>
+              <p className="text-sm text-gray-500">Paste the link and we'll show which color variations suit your season best.</p>
+            </div>
+            <span className="shrink-0 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm">
+              Analyze a new product →
+            </span>
+          </a>
+        </div>
+      </section>
+
       <section className="px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-gray-200/80 pb-6">
