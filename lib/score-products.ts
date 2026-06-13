@@ -44,7 +44,7 @@ export function scoreAndSortProducts(
         ? seasonalPalettes.find((p) => p.name === selectedPalette)
         : undefined;
       const hasAvoidWarning = selectedPaletteData
-        ? isNearAvoidColor(product.hex, selectedPaletteData.avoidColors)
+        ? isNearAvoidColor(product.hex, selectedPaletteData.avoidColors, matchScore)
         : false;
 
       return { product, matchScore, hasAvoidWarning };

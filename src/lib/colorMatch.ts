@@ -80,13 +80,20 @@ export function getMatchScore(
 export const GOOD_MATCH_MIN_SCORE = 75;
 
 /** Minimum similarity to an avoid color (0–100) before showing a warning. */
-export const AVOID_COLOR_CLOSE_SCORE = 70;
+export const AVOID_COLOR_CLOSE_SCORE = 82;
 
 export function isNearAvoidColor(
   productHex: string,
   avoidColors: AvoidColor[],
+  goodColorScore: number,
 ): boolean {
   if (avoidColors.length === 0) {
+    return false;
+  }
+
+  // If the color already matches the palette's good colors well, don't warn —
+  // the scoring tells the real story and an avoid warning would be contradictory.
+  if (goodColorScore >= GOOD_MATCH_MIN_SCORE) {
     return false;
   }
 

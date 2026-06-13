@@ -7,6 +7,7 @@ type ProductCardProps = {
   product: Product;
   matchScore: number;
   hasAvoidWarning?: boolean;
+  selectedPalette?: string | null;
 };
 
 function hexIsLight(hex: string): boolean {
@@ -42,6 +43,7 @@ export function ProductCard({
   product,
   matchScore,
   hasAvoidWarning = false,
+  selectedPalette = null,
 }: ProductCardProps) {
   const productUrl = product.affiliateUrl || product.amazonUrl;
   const textColor = hexIsLight(product.hex) ? "#4a4a4a" : "#f5f5f5";
@@ -115,7 +117,7 @@ export function ProductCard({
           )}
         </div>
 
-        <MatchScoreBar score={matchScore} />
+        {selectedPalette && <MatchScoreBar score={matchScore} />}
 
         {/* Top matching palettes */}
         <div className="space-y-1.5">

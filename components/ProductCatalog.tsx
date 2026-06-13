@@ -242,6 +242,7 @@ export function ProductCatalog() {
                     product={product}
                     matchScore={matchScore}
                     hasAvoidWarning={hasAvoidWarning}
+                    selectedPalette={appliedPalette}
                   />
                 ),
               )}
