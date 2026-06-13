@@ -47,17 +47,22 @@ export function ProductCard({
 }: ProductCardProps) {
   const productUrl = product.affiliateUrl || product.amazonUrl;
   const textColor = hexIsLight(product.hex) ? "#4a4a4a" : "#f5f5f5";
-
-  // Top 3 palettes by color match score
   const topPalettes = getTopMatchingPalettes(product.hex).slice(0, 3);
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:border-gray-200 hover:shadow-xl hover:shadow-gray-200/50">
-      <div
-        className="relative aspect-[4/5] overflow-hidden"
+
+      {/* Image — linked to product */}
+      <a
+        href={productUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative aspect-[4/5] overflow-hidden block"
         style={{
           background: `linear-gradient(145deg, ${product.hex}cc 0%, ${product.hex} 100%)`,
         }}
+        tabIndex={-1}
+        aria-hidden
       >
         {product.imageUrl ? (
           <Image
@@ -73,10 +78,7 @@ export function ProductCard({
               className="h-14 w-14 rounded-full shadow-lg ring-4 ring-white/30"
               style={{ backgroundColor: product.hex }}
             />
-            <span
-              className="text-sm font-medium opacity-80"
-              style={{ color: textColor }}
-            >
+            <span className="text-sm font-medium opacity-80" style={{ color: textColor }}>
               {product.colorName}
             </span>
           </div>
@@ -93,20 +95,16 @@ export function ProductCard({
             </span>
           </div>
         )}
-      </div>
+      </a>
 
+      {/* Card body */}
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             {product.category}
           </p>
           <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-gray-900 transition-colors group-hover:text-rose-800">
-            <a
-              href={productUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:underline underline-offset-2"
-            >
+            <a href={productUrl} target="_blank" rel="noopener noreferrer" className="hover:underline underline-offset-2">
               {product.productName}
             </a>
           </h3>
@@ -115,6 +113,15 @@ export function ProductCard({
               {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
             </p>
           )}
+          {/* Color swatch — below price */}
+          <div className="flex items-center gap-2 pt-0.5">
+            <span
+              className="h-4 w-4 shrink-0 rounded-full border border-black/10 shadow-inner"
+              style={{ backgroundColor: product.hex }}
+              title={product.colorName}
+            />
+            <span className="text-sm text-gray-500">{product.colorName}</span>
+          </div>
         </div>
 
         {selectedPalette && <MatchScoreBar score={matchScore} />}
@@ -129,33 +136,17 @@ export function ProductCard({
               const season = PALETTE_SEASON[p.name] ?? "Spring";
               return (
                 <li key={p.name} className="flex items-center gap-2">
-                  <span className="w-3 text-[10px] font-medium text-gray-300 tabular-nums">
-                    {i + 1}
-                  </span>
+                  <span className="w-3 text-[10px] font-medium text-gray-300 tabular-nums">{i + 1}</span>
                   <span className={`h-2 w-2 shrink-0 rounded-full ${SEASON_DOT[season]}`} />
-                  <span className={`flex-1 text-xs font-medium ${SEASON_TEXT[season]}`}>
-                    {p.name}
-                  </span>
-                  <span className="text-[11px] tabular-nums text-gray-400">
-                    {p.score}%
-                  </span>
+                  <span className={`flex-1 text-xs font-medium ${SEASON_TEXT[season]}`}>{p.name}</span>
+                  <span className="text-[11px] tabular-nums text-gray-400">{p.score}%</span>
                 </li>
               );
             })}
           </ol>
         </div>
 
-        <div className="mt-auto space-y-3 border-t border-gray-50 pt-4">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="h-6 w-6 shrink-0 rounded-full shadow-inner ring-2 ring-white"
-              style={{ backgroundColor: product.hex }}
-              title={product.colorName}
-            />
-            <span className="truncate text-sm text-gray-600">
-              {product.colorName}
-            </span>
-          </div>
+        <div className="mt-auto border-t border-gray-50 pt-4">
           <a
             href={productUrl}
             target="_blank"
