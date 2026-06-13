@@ -5,8 +5,6 @@ import {
   isNearAvoidColor,
 } from "@/src/lib/colorMatch";
 
-/** Minimum score to show a product when a palette filter is active. */
-const PALETTE_FILTER_MIN_SCORE = 50;
 import type { Product } from "@/lib/types";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
 
@@ -54,14 +52,9 @@ export function scoreAndSortProducts(
     })
     .sort((a, b) => b.matchScore - a.matchScore);
 
-  // When a palette is active, drop products that don't meet the minimum threshold.
-  const paletteFiltered = selectedPalette
-    ? scored.filter((item) => item.matchScore >= PALETTE_FILTER_MIN_SCORE)
-    : scored;
-
   if (!onlyGoodMatches) {
-    return paletteFiltered;
+    return scored;
   }
 
-  return paletteFiltered.filter((item) => item.matchScore >= GOOD_MATCH_MIN_SCORE);
+  return scored.filter((item) => item.matchScore >= GOOD_MATCH_MIN_SCORE);
 }
