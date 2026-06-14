@@ -32,6 +32,38 @@ function buildAffiliateUrl(asin: string): string {
   return `https://www.amazon.com/dp/${asin}?linkCode=ll2&tag=gracecounselo-20&language=en_US&ref_=as_li_ss_tl`;
 }
 
+type PageData = {
+  title: string;
+  brand: string;
+  price: number | null;
+  colors: { name: string; imageUrl: string }[];
+};
+
+function parseAmazonPage(html: string): PageData {
+  const title = html.match(/<span id="productTitle"[^>]*>\s*([^<]+)\s*<\/span>/)?.[1]?.trim() ?? "";
+  const brand =
+    html.match(/(?:by|Brand)[:\s]+<[^>]+>([^<]+)<\/a>/i)?.[1]?.trim() ??
+    html.match(/"brand"\s*:\s*"([^"]+)"/)?.[1]?.trim() ??
+    "";
+  const priceStr = html.match(/class="a-price-whole">(\d+)/)?.[1];
+  const price = priceStr ? parseFloat(priceStr) : null;
+
+  // Extract colorImages block — a reliable JSON blob Amazon embeds in every product page
+  const colors: { name: string; imageUrl: string }[] = [];
+  const start = html.indexOf('"colorImages":{');
+  if (start !== -1) {
+    const sub = html.slice(start, start + 20000);
+    const matches = [...sub.matchAll(/"([A-Za-z][A-Za-z0-9 /&-]+)":\[\{"large":"([^"]+)","thumb":"[^"]+","hiRes":"([^"]+)"/g)];
+    for (const m of matches) {
+      const name = m[1];
+      if (["large", "thumb", "hiRes", "variant", "main"].includes(name)) continue;
+      colors.push({ name, imageUrl: m[3] || m[2] });
+    }
+  }
+
+  return { title, brand, price, colors };
+}
+
 export async function analyzeAmazonUrl(url: string): Promise<AnalyzeResult> {
   const asin = extractAsin(url);
   if (!asin) {
@@ -43,8 +75,8 @@ export async function analyzeAmazonUrl(url: string): Promise<AnalyzeResult> {
     return { ok: false, error: "ANTHROPIC_API_KEY is not set. Add it to your .env.local file." };
   }
 
-  // Fetch the Amazon page server-side
-  let pageHtml = "";
+  // Fetch the Amazon page and extract structured data directly
+  let pageData: PageData = { title: "", brand: "", price: null, colors: [] };
   try {
     const res = await fetch(`https://www.amazon.com/dp/${asin}`, {
       headers: {
@@ -54,40 +86,35 @@ export async function analyzeAmazonUrl(url: string): Promise<AnalyzeResult> {
       },
     });
     if (res.ok) {
-      const full = await res.text();
-      // Strip scripts/styles to reduce token usage, keep structure
-      pageHtml = full
-        .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .slice(0, 60000);
+      pageData = parseAmazonPage(await res.text());
     }
   } catch {
-    // Continue without HTML — Claude will work from URL/ASIN alone
+    // Continue with empty pageData
   }
 
   const client = new Anthropic({ apiKey });
-
   const paletteList = seasonalPaletteNames.join(", ");
+
+  // Build color list for Claude — either from page parse or ask it to estimate
+  const colorContext = pageData.colors.length > 0
+    ? `The product has these color variations (already extracted from the page):\n${pageData.colors.map(c => `- ${c.name}`).join("\n")}\n\nProduct title: ${pageData.title || "(unknown)"}\nBrand: ${pageData.brand || "(unknown)"}`
+    : `ASIN: ${asin}\nProduct URL: https://www.amazon.com/dp/${asin}\n(Page HTML unavailable — estimate typical color options for this type of clothing item and return at least 6–10 common colors.)`;
 
   const prompt = `You are helping categorize Amazon clothing products for a seasonal color analysis shopping site.
 
-ASIN: ${asin}
-Amazon URL: https://www.amazon.com/dp/${asin}
-${pageHtml ? `\nPage HTML (truncated):\n${pageHtml}` : "\n(Page HTML unavailable — use your general knowledge of Amazon products to identify likely color options for this type of item.)"}
-
-IMPORTANT: Return ALL color variations for this product — most clothing items on Amazon have 5–15+ color options. Do NOT return just one. If the page HTML is unavailable, use your knowledge of typical color options for this type of clothing item and return at least 6–10 common colors (e.g. black, white, navy, red, green, beige, pink, blue, grey, burgundy). It is better to include more variants than to miss some.
+${colorContext}
 
 For each color variant return a JSON object with:
-- productName: full product name (same for all variants)
-- brand: brand name
+- productName: full product name (same for all variants)${pageData.title ? ` — use "${pageData.title}"` : ""}
+- brand: brand name${pageData.brand ? ` — use "${pageData.brand}"` : ""}
 - category: pick the best match from: "Women's Dresses", "Women's Maxi Dresses", "Women's Tops", "Women's T-Shirts", "Women's Blouses", "Women's Blazers", "Women's Skirts", "Women's Pants", "Women's Shorts", "Women's Cardigans", "Women's Sweaters", "Women's Coats", "Women's Jumpsuits", "Women's Polo Shirts", "Men's T-Shirts", "Men's Shirts", "Men's Pants", "Men's Shorts", "Men's Blazers", "Men's Sweaters", "Men's Coats", "Unisex Tops", "Unisex Bottoms"
-- asin: the ASIN (use the same ASIN for all unless you know the per-variant ASIN)
-- colorName: the color name as Amazon lists it
+- asin: "${asin}"
+- colorName: the color name exactly as listed
 - hex: your best hex estimate for this color (e.g. "Navy Blue" → "#1a2d5a", "Ivory" → "#FFFFF0")
 - seasonalPalette: which of these 12 palettes best fits this color: ${paletteList}
-- price: price as a number (e.g. 29.99), or null if unknown
-- imageUrl: product image URL if visible in the HTML, otherwise ""
-- notes: any relevant notes, or ""
+- price: ${pageData.price != null ? pageData.price : "null (unknown)"}
+- imageUrl: "" (images are handled separately)
+- notes: ""
 
 Return ONLY a valid JSON array, no explanation or markdown fences.`;
 
@@ -99,30 +126,37 @@ Return ONLY a valid JSON array, no explanation or markdown fences.`;
     });
 
     const text = message.content[0].type === "text" ? message.content[0].text.trim() : "";
-    // Strip markdown code fences if present
     const json = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
     const raw = JSON.parse(json) as Record<string, unknown>[];
 
     if (!Array.isArray(raw) || raw.length === 0) {
-      return { ok: false, error: "Claude did not return any product variants. The page may have been blocked." };
+      return { ok: false, error: "Claude did not return any product variants. Try again or check the URL." };
     }
 
-    const variants: AnalyzedVariant[] = raw.map((v) => ({
-      productName: String(v.productName ?? ""),
-      brand: String(v.brand ?? ""),
-      category: String(v.category ?? ""),
-      asin: String(v.asin ?? asin),
-      amazonUrl: `https://www.amazon.com/dp/${String(v.asin ?? asin)}`,
-      affiliateUrl: buildAffiliateUrl(String(v.asin ?? asin)),
-      colorName: String(v.colorName ?? ""),
-      hex: String(v.hex ?? "#888888"),
-      seasonalPalette: (seasonalPaletteNames.includes(v.seasonalPalette as SeasonalPalette)
-        ? v.seasonalPalette
-        : "Light Spring") as SeasonalPalette,
-      price: v.price != null && v.price !== "" ? Number(v.price) : null,
-      imageUrl: String(v.imageUrl ?? ""),
-      notes: String(v.notes ?? ""),
-    }));
+    // Build a lookup of color name → imageUrl from page parse
+    const imageByColor = new Map(pageData.colors.map(c => [c.name.toLowerCase(), c.imageUrl]));
+
+    const variants: AnalyzedVariant[] = raw.map((v) => {
+      const colorName = String(v.colorName ?? "");
+      // Match image by exact color name (case-insensitive)
+      const imageUrl = imageByColor.get(colorName.toLowerCase()) ?? "";
+      return {
+        productName: String(v.productName ?? ""),
+        brand: String(v.brand ?? ""),
+        category: String(v.category ?? ""),
+        asin: String(v.asin ?? asin),
+        amazonUrl: `https://www.amazon.com/dp/${asin}`,
+        affiliateUrl: buildAffiliateUrl(asin),
+        colorName,
+        hex: String(v.hex ?? "#888888"),
+        seasonalPalette: (seasonalPaletteNames.includes(v.seasonalPalette as SeasonalPalette)
+          ? v.seasonalPalette
+          : "Light Spring") as SeasonalPalette,
+        price: pageData.price ?? (v.price != null && v.price !== "" ? Number(v.price) : null),
+        imageUrl,
+        notes: String(v.notes ?? ""),
+      };
+    });
 
     return { ok: true, variants };
   } catch (err) {
