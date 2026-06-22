@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readProductsFile } from "@/src/lib/products-store";
 import { seasonalPaletteNames } from "@/src/data/seasonalPalettes";
 import { filterProducts } from "@/lib/filter-products";
+import { isMakeupProduct } from "@/lib/makeup-categories";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
 
 function parseSelectedPalette(value: string | null): SeasonalPalette | null {
@@ -22,7 +23,8 @@ export async function GET(request: NextRequest) {
   const selectedPalette = parseSelectedPalette(paletteParam);
 
   const allProducts = await readProductsFile();
-  const products = filterProducts(allProducts, category, gender);
+  const clothingProducts = allProducts.filter((p) => !isMakeupProduct(p.category));
+  const products = filterProducts(clothingProducts, category, gender);
 
   return NextResponse.json({ products, category, gender, selectedPalette });
 }

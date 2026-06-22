@@ -3,32 +3,7 @@ import { readProductsFile } from "@/src/lib/products-store";
 import { seasonalPaletteNames } from "@/src/data/seasonalPalettes";
 import type { SeasonalPalette } from "@/src/data/seasonalPalettes";
 
-const MAKEUP_CATEGORIES = [
-  "lipstick",
-  "lip gloss",
-  "lip liner",
-  "blush",
-  "eyeshadow",
-  "eye shadow",
-  "eyeliner",
-  "mascara",
-  "foundation",
-  "concealer",
-  "bronzer",
-  "highlighter",
-  "makeup",
-  "cosmetics",
-  "nail polish",
-  "lip",
-  "rouge",
-  "powder",
-  "primer",
-];
-
-function isMakeupProduct(category: string): boolean {
-  const lower = category.toLowerCase();
-  return MAKEUP_CATEGORIES.some((mc) => lower.includes(mc));
-}
+import { isMakeupProduct } from "@/lib/makeup-categories";
 
 function parseSelectedPalette(value: string | null): SeasonalPalette | null {
   if (!value || value.trim() === "" || value === "All palettes") {
