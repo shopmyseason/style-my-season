@@ -100,16 +100,16 @@ export async function analyzeAmazonUrl(url: string): Promise<AnalyzeResult> {
   // Build color list for Claude — either from page parse or ask it to estimate
   const colorContext = pageData.colors.length > 0
     ? `The product has these color variations (already extracted from the page):\n${pageData.colors.map(c => `- ${c.name}`).join("\n")}\n\nProduct title: ${pageData.title || "(unknown)"}\nBrand: ${pageData.brand || "(unknown)"}`
-    : `ASIN: ${asin}\nProduct URL: https://www.amazon.com/dp/${asin}\n(Page HTML unavailable — estimate typical color options for this type of clothing item and return at least 6–10 common colors.)`;
+    : `ASIN: ${asin}\nProduct URL: https://www.amazon.com/dp/${asin}\n(Page HTML unavailable — estimate typical color options for this type of product and return at least 6–10 common colors.)`;
 
-  const prompt = `You are helping categorize Amazon clothing products for a seasonal color analysis shopping site.
+  const prompt = `You are helping categorize Amazon products (clothing, makeup, and beauty) for a seasonal color analysis shopping site.
 
 ${colorContext}
 
 For each color variant return a JSON object with:
 - productName: full product name (same for all variants)${pageData.title ? ` — use "${pageData.title}"` : ""}
 - brand: brand name${pageData.brand ? ` — use "${pageData.brand}"` : ""}
-- category: pick the best match from: "Women's Dresses", "Women's Maxi Dresses", "Women's Tops", "Women's T-Shirts", "Women's Blouses", "Women's Blazers", "Women's Skirts", "Women's Pants", "Women's Shorts", "Women's Cardigans", "Women's Sweaters", "Women's Coats", "Women's Jumpsuits", "Women's Polo Shirts", "Men's T-Shirts", "Men's Shirts", "Men's Pants", "Men's Shorts", "Men's Blazers", "Men's Sweaters", "Men's Coats", "Unisex Tops", "Unisex Bottoms"
+- category: pick the best match from: "Women's Dresses", "Women's Maxi Dresses", "Women's Tops", "Women's T-Shirts", "Women's Blouses", "Women's Blazers", "Women's Skirts", "Women's Pants", "Women's Shorts", "Women's Cardigans", "Women's Sweaters", "Women's Coats", "Women's Jumpsuits", "Women's Polo Shirts", "Men's T-Shirts", "Men's Shirts", "Men's Pants", "Men's Shorts", "Men's Blazers", "Men's Sweaters", "Men's Coats", "Unisex Tops", "Unisex Bottoms", "Lipstick", "Lip Gloss", "Lip Liner", "Blush", "Eyeshadow", "Eyeliner", "Mascara", "Foundation", "Concealer", "Bronzer", "Highlighter", "Nail Polish", "Makeup Palette", "Powder", "Primer"
 - asin: "${asin}"
 - colorName: the color name exactly as listed
 - hex: your best hex estimate for this color (e.g. "Navy Blue" → "#1a2d5a", "Ivory" → "#FFFFF0")

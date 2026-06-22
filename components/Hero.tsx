@@ -29,6 +29,10 @@ export function Hero() {
           sorted, and styled for you.
         </p>
         <p className="mt-3 text-sm text-gray-500">
+          <Link href="/makeup" className="font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700">
+            Shop makeup →
+          </Link>
+          {" · "}
           Not sure which season you are?{" "}
           <Link href="/seasons" className="font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700">
             Learn about the 12 palettes →
